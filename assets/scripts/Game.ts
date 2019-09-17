@@ -1,4 +1,5 @@
 import BaseComponent = require("./BaseComponent");
+import { Sound } from "./Sound";
 const { ccclass, property } = cc._decorator;
 
 enum playingState {
@@ -71,8 +72,11 @@ class Game extends BaseComponent {
     currentLine: cc.Node;//当前移动木棍
 
     currentAllPlatFormNum = 0;
+
+    sound:Sound;
     OnLoad() {
         window["t"] = this;
+        this.sound = this.node.getComponent(Sound);
         this.lb_point = cc.find("point/New Label", this.node).getComponent(cc.Label);
         this.nd_Login = cc.find("layout/denglu", this.node);
         this.nd_Login.getComponent("Login").game = this;
@@ -121,9 +125,11 @@ class Game extends BaseComponent {
 
     /** 直线旋转*/
     LineRotate() {
+        this.sound.PlayStackDown();
         this.currentLine.stopAllActions();
         this.currentLine.runAction(cc.sequence(cc.rotateTo(this.StickTime, 90), cc.callFunc(() => {
             this.playState = playingState.PerSonAction;
+            this.sound.PlayRun();
             this.perAnimation.play();
         })));
     }
@@ -160,12 +166,15 @@ class Game extends BaseComponent {
                         break;
                     }
                 }
+                this.sound.StopPersonRun();
                 if (StayPlatFormNum > 0) {
                     this.playState = playingState.MoveScene;
+                    this.sound.PlayGetScore()
                     this.MoveNextScene(StayPlatFormNum);
                 }
                 else {
                     this.playState = playingState.PerSonFail;
+                    this.sound.PlayDown()
                 }
             }
         }
@@ -300,12 +309,14 @@ class Game extends BaseComponent {
 
     OnPoker_TouchStart(event) {
         if (this.playState == playingState.Init) {
-            this.playState = playingState.Drawing
+            this.playState = playingState.Drawing;
+            this.sound.PlayStackUp();
         }
     }
     OnPoker_TouchEnd(event) {
         if (this.playState == playingState.Drawing) {
             this.playState = playingState.Rotateing;
+            this.sound.StopStackUp();
             this.LineRotate();
         }
     }
@@ -334,9 +345,6 @@ class Game extends BaseComponent {
         UIEnd.ShowPoint();
     }
 
-    OnClick() {
-
-    }
 
     //列表随机1个出来
     RandInt(start: number, end: number) {
